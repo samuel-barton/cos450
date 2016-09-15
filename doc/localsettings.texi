@@ -1,0 +1,97 @@
+@c Local settings
+
+@set coursenumber COS 450
+@set localpintostarpath /usr/class/cos450/pintos.tar.gz
+@set localpintoshttppath http://@/people.usm.maine.edu/@/houser/@/cos450/@/pintos.@/tar.gz
+@set localpintosbindir /usr/class/cos450/bin
+@set localpintosgit ssh://linux.cs.usm.maine.edu/usr/class/cos450/pintos.git
+@set gitrepo git://pintos-os.org/pintos-anon
+
+@set recommendgit
+@clear recommendcvs
+@set recommendvnc
+@set recommendgit
+@clear recommendcygwin
+@clear recommendcvs
+
+@macro localmachines{}
+The COS 450 ``officially supported'' Pintos development machines are the Linux
+machines in the Science Building managed by the CS Department, as described on
+the @uref{http://usm.maine.edu/cos/unix-lab-guide, , CS department webpage}.
+@end macro
+
+@macro localpathsetup{}
+Under @command{bash}, the USM CS Lab's login shell, you can do so
+with this command:
+@example
+export PATH=@value{localpintosbindir}:$PATH
+@end example
+@noindent
+It is a good idea to add this line to the @file{~/.bashrc} or @file{~/.profile} file
+in your home directory. Otherwise, you'll have to type it every time
+you log in.
+@end macro
+
+@macro localcrossbuild{}
+Watch the commands executed during the build.  On the Linux machines,
+the ordinary system tools are used.
+@end macro
+
+@macro localhonorcodepolicy{}
+In the context of USM's COS 450 course, please respect the spirit
+and the letter of the honor code by refraining from reading any homework
+solutions available online or elsewhere.  Reading the source code for
+other operating system kernels, such as Linux or FreeBSD, is allowed,
+but do not copy code from them literally.  Please cite the code that
+inspired your own in your design documentation.
+@end macro
+
+@macro localcredits{}
+Local changes for Computer Science at the University of Southern Maine
+by Stephen Houser @email{houser@@usm.maine.edu}.
+@end macro
+
+@macro localcvspolicy{}
+Instead, we recommend integrating your team's changes early and often,
+using a source code control system such as Git (@pxref{Git}).
+This is less likely to produce surprises, because everyone can see
+everyone else's code as it is written, instead of just when it is
+finished.  Source code control systems also make it possible to review 
+changes and, when a change introduces a bug, drop back to working 
+versions of code.
+@end macro
+
+@macro localcodingstandards{}
+All of you should have taken a class like COS 160, so we expect you to be
+familiar with some set of coding standards such as
+@uref{http://stephenhouser.com/cos450,
+, USM CS Coding Standards}. Even if you've taken COS 160, we recommend
+reviewing that document.  We expect code at the ``Peer-Review Quality''
+level described there.
+@end macro
+
+@macro localdevelopmenttools{}
+@c Descriptions of additional, local development tools can be inserted here
+@end macro
+
+@macro localsubmission{}
+The source code archive should be a @code{tar.gz} file. It should be
+named exactly @file{project.tar.gz}.
+
+The design document should be a copy of the correct template with all
+sections completed. It should be named exactly @file{DESIGNDOC} and located
+in the proper directory as specified in the assignment instructions.
+
+@enumerate
+@item @code{make clean} in your @file{pintos/src} directory.
+@item @code{tar czvf project.tar.gz *} in your @file{pintos/src} directory.
+@item Login to @uref{http://www.courses.maine.edu, Blackboard} and submit your @code{tar.gz} to the appropriate project assignment.
+@end enumerate
+
+Following these instructions ensures that we can use scripts to
+extract, build, and grade your project. The penalty for violating the
+instructions is a 10 point deduction; we will give you two warnings
+where you can resubmit your project.
+
+@end macro
+
