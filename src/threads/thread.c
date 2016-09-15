@@ -523,8 +523,8 @@ next_thread_to_run (void)
 static bool priority_comp(struct list_elem *a, struct list_elem *b, 
                           void *unused)
 {
-    struct thread *thread_a = (list_entry(a, struct thread, elem));
-    struct thread *thread_b = (list_entry(b, struct thread, elem));
+    struct thread *thread_a = list_entry(a, struct thread, elem);
+    struct thread *thread_b = list_entry(b, struct thread, elem);
 
     return thread_a->priority < thread_b->priority;
 }
@@ -532,8 +532,8 @@ static bool priority_comp(struct list_elem *a, struct list_elem *b,
 /* returns whether or not thread a's priority less than thread b's. */
 static bool wake_comp (struct list_elem *a, struct list_elem *b, void *unused)
 {
-  struct thread *thread_a = (list_entry(a, struct thread, sleep_elem));
-  struct thread *thread_b = (list_entry(b, struct thread, sleep_elem));
+  struct thread *thread_a = list_entry(a, struct thread, sleep_elem);
+  struct thread *thread_b = list_entry(b, struct thread, sleep_elem);
 
   return thread_a->wakeup < thread_b->wakeup;
 }
@@ -550,11 +550,19 @@ void wake_ready_threads (void)
       return;
   else
   {
+    printf("(wake) Wake up ticks: %d\n",thread_to_check->wakeup);
+    /* turn interrupts off, remove the thread from the wait list, and put it
+       on the ready list. Once this is done, turn interrupts back on and 
+       unblock the thread using thread_unblock. */
     enum intr_level old_level = intr_disable ();
-    thread_to_check = list_entry(list_pop_front(&sleep_list), struct thread, sleep_elem);
-    thread_to_check->status = THREAD_READY;
-    list_insert_ordered(&ready_list, &thread_to_check->elem, priority_comp, NULL);
+    thread_to_check = list_entry(list_pop_front(&sleep_list), 
+                                 struct thread, sleep_elem);
+    list_insert_ordered(&ready_list, &thread_to_check->elem, priority_comp, 
+                        NULL);
     intr_set_level (old_level);
+
+    printf("thread's off waitlist");
+    thread_unblock(thread_to_check);
   }
 
   wake_ready_threads();
@@ -616,11 +624,15 @@ thread_schedule_tail (struct thread *prev)
    removed from being the running thread by the scheduler. */
 void thread_sleep (int64_t wakeup_ticks)
 {
+  if (wakeup_ticks < 0)
+    wakeup_ticks = 0;
+
   struct thread *cur = running_thread ();
   cur->wakeup = wakeup_ticks;
+  printf("(sleep) Wake up ticks: %d\n",cur->wakeup);
   enum intr_level old_level = intr_disable ();
-  cur->status = THREAD_BLOCKED;
   list_insert_ordered(&sleep_list, &cur->sleep_elem, wake_comp, NULL);
+  thread_block();
   intr_set_level (old_level);
 }
 
