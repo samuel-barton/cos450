@@ -538,9 +538,11 @@ static bool wake_comp (struct list_elem *a, struct list_elem *b, void *unused)
   return thread_a->wakeup < thread_b->wakeup;
 }
 
+/* check the first element in the wait list to see if it needs to be put on 
+   the ready list. If it does, then put it on the ready list, and check the
+   next element in the list, otherwise return immediately. */
 void wake_ready_threads (void)
 {
-  // scan list for ready threads
   struct thread *thread_to_check = list_entry(list_begin(&sleep_list), 
 				              struct thread, sleep_elem);
 
@@ -548,12 +550,10 @@ void wake_ready_threads (void)
       return;
   else
   {
-    // turn off interrupts
     enum intr_level old_level = intr_disable ();
     thread_to_check = list_entry(list_pop_front(&sleep_list), struct thread, sleep_elem);
     thread_to_check->status = THREAD_READY;
     list_insert_ordered(&ready_list, &thread_to_check->elem, priority_comp, NULL);
-    // turn on interrupts    
     intr_set_level (old_level);
   }
 
@@ -611,6 +611,9 @@ thread_schedule_tail (struct thread *prev)
     }
 }
 
+/* puts the currently active thread to sleep. The thread is put on the wait
+   list, its position the list is determined by its sleep time. The thread is
+   removed from being the running thread by the scheduler. */
 void thread_sleep (int64_t wakeup_ticks)
 {
   struct thread *cur = running_thread ();
