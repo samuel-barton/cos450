@@ -81,6 +81,7 @@ void wake_ready_threads (void);
 void thread_sleep (int64_t wakeup_ticks);
 
 static tid_t allocate_tid (void);
+void prioritize(struct thread *t);
 
 
 
@@ -148,12 +149,34 @@ thread_tick (void)
   else
     kernel_ticks++;
 
+  // force highest priority thread to be running.
+  prioritize(t);
+
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 
   // check for waiting threads to wake
   wake_ready_threads();
+}
+
+void prioritize(struct thread *t)
+{
+  int next_priority;
+  if (!list_empty(&ready_list))
+  {
+    enum intr_level old_level;
+    old_level = intr_disable ();
+    next_priority = list_entry(list_front(&ready_list),
+                               struct thread, elem)->priority;
+    
+    intr_set_level (old_level);
+  }
+  else
+    next_priority = 0;
+  
+  if (t->priority < next_priority)
+    schedule();
 }
 
 /* Prints thread statistics. */
@@ -325,7 +348,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+    list_insert_ordered(&ready_list, &cur->elem, priority_comp, NULL);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
