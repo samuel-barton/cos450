@@ -104,9 +104,9 @@ timer_sleep (int64_t ticks)
   
   if (ticks >= 0)
   {
-    int64_t wakeup_time = timer_ticks() + ticks;
+    int64_t wakeup_ticks = timer_ticks() + ticks;
 
-    thread_sleep(wakeup_time);
+    thread_sleep(wakeup_ticks);
   }
 }
 
