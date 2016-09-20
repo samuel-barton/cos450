@@ -73,9 +73,9 @@ static bool is_thread (struct thread *) UNUSED;
 static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
-static bool priority_comp(const struct list_elem *a, 
+bool priority_comp(const struct list_elem *a, 
                           const struct list_elem *b, void *unused);
-static bool wake_comp (const struct list_elem *a, 
+bool wake_comp (const struct list_elem *a, 
                        const struct list_elem *b, void *unused);
 void wake_ready_threads (void);
 void thread_sleep (int64_t wakeup_ticks);
@@ -522,23 +522,24 @@ next_thread_to_run (void)
 /* Returns whether or not item a is greater in priority than item
    b. */
 
-static bool priority_comp(const struct list_elem *a, const struct list_elem *b, 
+bool priority_comp(const struct list_elem *a, const struct list_elem *b, 
                           void *unused)
 {
     struct thread *thread_a = list_entry(a, struct thread, elem);
     struct thread *thread_b = list_entry(b, struct thread, elem);
 
-    return thread_a->priority < thread_b->priority;
+    return thread_a->priority >= thread_b->priority;
 }
 
 /* returns whether or not thread a's priority less than thread b's. */
-static bool wake_comp (const struct list_elem *a, 
+bool wake_comp (const struct list_elem *a, 
                        const struct list_elem *b, void *unused)
 {
   struct thread *thread_a = list_entry(a, struct thread, sleep_elem);
   struct thread *thread_b = list_entry(b, struct thread, sleep_elem);
 
-  return thread_a->wakeup < thread_b->wakeup;
+  int comp = thread_a->wakeup - thread_b->wakeup;
+  return comp < 0 || (comp == 0 && thread_a->priority >= thread_b->priority);
 }
 
 /* check the first element in the wait list to see if it needs to be put on 
