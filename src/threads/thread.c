@@ -68,6 +68,7 @@ static void kernel_thread (thread_func *, void *aux);
 static void idle (void *aux UNUSED);
 static struct thread *running_thread (void);
 static struct thread *next_thread_to_run (void);
+static struct thread *next_thread(void);
 static void init_thread (struct thread *, const char *name, int priority);
 static bool is_thread (struct thread *) UNUSED;
 static void *alloc_frame (struct thread *, size_t size);
@@ -81,7 +82,7 @@ void wake_ready_threads (void);
 void thread_sleep (int64_t wakeup_ticks);
 
 static tid_t allocate_tid (void);
-void prioritize(struct thread *t);
+void prioritize();
 
 
 
@@ -150,7 +151,7 @@ thread_tick (void)
     kernel_ticks++;
 
   // force highest priority thread to be running.
-  prioritize(t);
+
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
@@ -160,24 +161,19 @@ thread_tick (void)
   wake_ready_threads();
 }
 
-void prioritize(struct thread *t)
+void prioritize()
 {
-  int next_priority;
-  if (!list_empty(&ready_list))
-  {
-    enum intr_level old_level;
-    old_level = intr_disable ();
-    next_priority = list_entry(list_front(&ready_list),
-                               struct thread, elem)->priority;
-    
-    intr_set_level (old_level);
+ if(!list_empty(&ready_list)){
+   enum intr_level old_level = intr_disable ();
+   if (thread_current()->priority < list_entry(list_front(&ready_list),
+       struct thread, elem)-> priority){
+          thread_yield();
+     }
+   intr_set_level (old_level);
   }
-  else
-    next_priority = 0;
-  
-  if (t->priority < next_priority)
-    schedule();
+ 
 }
+
 
 /* Prints thread statistics. */
 void
@@ -240,6 +236,8 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
+
+  prioritize();
 
   return tid;
 }
@@ -348,10 +346,12 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
+ //   list_push_back(&ready_list, &cur->elem);
     list_insert_ordered(&ready_list, &cur->elem, priority_comp, NULL);
   cur->status = THREAD_READY;
-  schedule ();
+  schedule();
   intr_set_level (old_level);
+  
 }
 
 /* Invoke function 'func' on all threads, passing along 'aux'.
@@ -376,6 +376,7 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+  prioritize();
 }
 
 /* Returns the current thread's priority. */
