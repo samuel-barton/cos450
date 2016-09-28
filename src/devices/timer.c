@@ -187,7 +187,28 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+
   thread_tick ();
+
+  if(thread_mlfqs){
+    increment_recent_cpu();
+
+    if(ticks % TIMER_FREQ == 0){
+
+      update_load_avg();
+      update_recent_cpu();
+
+    }
+  
+    if(ticks % 4 == 0) {
+      recalc_priorities();
+    }
+  }
+
+
+
+  
+
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
