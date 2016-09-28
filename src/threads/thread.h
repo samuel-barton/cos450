@@ -100,6 +100,9 @@ struct thread
 
   /* ---- NEW -------- */
     struct list_elem sleep_elem;              /*  wait List element. */
+    int nice; 
+    int recent_cpu;
+
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -108,6 +111,7 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+
   };
 
 /* If false (default), use round-robin scheduler.
@@ -139,6 +143,7 @@ typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
 
 int thread_get_priority (void);
+bool thread_get_has_lock (void);
 void thread_set_priority (int);
 
 int thread_get_nice (void);
@@ -147,5 +152,20 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 bool priority_comp(const struct list_elem *a, 
                           const struct list_elem *b, void *unused);
+
+
+void increment_recent_cpu (void);
+void scheduler_recalc (void);
+
+void update_ready_threads(void);
+void update_load_avg (void);
+void update_recent_cpu (void);
+void recalc_priorities (void);
+int get_ready_threads (void);
+void wake_ready_threads (void);
+
+
+void thread_sleep (int64_t wakeup_ticks);
+
 
 #endif /* threads/thread.h */
