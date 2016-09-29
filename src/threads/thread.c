@@ -450,13 +450,8 @@ void
 update_load_avg (void)
 { 
 
-  enum intr_level old_level = intr_disable(); 
+
   update_ready_threads();
-
-
-
- 
-
 
   int temp = divide_fp_int( int_to_fp(59), 60);
   temp = multiply_fp_fp(temp, load_avg);
@@ -465,7 +460,7 @@ update_load_avg (void)
 
   load_avg =  add_fp_fp( temp, temp2 );
 
-  intr_set_level(old_level);
+
 
 }
 
@@ -482,29 +477,32 @@ update_ready_threads (void)
 }
 
 void
-update_recent_cpu (void)
+update_recent_cpu (struct thread *t, void *unused)
 {
-  enum intr_level old_level = intr_disable(); 
-  struct thread *cur = thread_current ();
- 
-  int temp  = multiply_fp_fp( int_to_fp(2) , load_avg);
-  int temp2 = multiply_fp_fp( int_to_fp(2) , add_fp_int( load_avg, 1) );
-  temp = divide_fp_fp( temp, temp2 );
-  temp = multiply_fp_fp( temp, cur->recent_cpu ); 
-  temp = add_fp_int( temp, cur->nice);
+  int temp  = multiply_fp_int( load_avg, 2);
+  temp = divide_fp_fp( temp, add_fp_int( temp, 1) );
+  temp = multiply_fp_fp( temp, t->recent_cpu ); 
+  temp = add_fp_int( temp, t->nice);
+  t->recent_cpu = temp;
 
-  cur->recent_cpu = temp;
-  intr_set_level(old_level);
 }
 
 void
 recalc_priorities (void)
 {
-   enum intr_level old_level = intr_disable(); 
-   thread_foreach(thread_recalc_priority, NULL);
-   intr_set_level(old_level);
+  enum intr_level old_level = intr_disable(); 
+  thread_foreach(thread_recalc_priority, NULL);
+  intr_set_level(old_level);
 }
 
+void
+recalc_on_second(void)
+{
+  enum intr_level old_level = intr_disable(); 
+  update_load_avg();
+  thread_foreach(update_recent_cpu, NULL);
+  intr_set_level(old_level);
+}
 
 
 
@@ -526,10 +524,9 @@ thread_recalc_priority( struct thread *t, void *unused)
 
     t->priority = temp;
  }
-
-   
-
 }
+
+
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
