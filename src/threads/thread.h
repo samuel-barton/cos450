@@ -159,8 +159,9 @@ void scheduler_recalc (void);
 
 void update_ready_threads(void);
 void update_load_avg (void);
-void update_recent_cpu (void);
+void update_recent_cpu (struct thread *t, void *unused);
 void recalc_priorities (void);
+void recalc_on_second(void);
 int get_ready_threads (void);
 void wake_ready_threads (void);
 
