@@ -195,8 +195,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
 
     if(ticks % TIMER_FREQ == 0){
 
-      update_load_avg();
-      update_recent_cpu();
+      recalc_on_second();
 
     }
   
@@ -204,12 +203,19 @@ timer_interrupt (struct intr_frame *args UNUSED)
       recalc_priorities();
     }
   }
-
-
-
-  
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Returns true if LOOPS iterations waits for more than one timer
    tick, otherwise false. */
