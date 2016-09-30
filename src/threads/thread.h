@@ -155,6 +155,9 @@ bool priority_comp(const struct list_elem *a,
                           const struct list_elem *b, void *unused);
 
 
+void thread_clear_donations(void);
+void thread_donate_priority(struct thread **donatee);
+
 void increment_recent_cpu (void);
 void scheduler_recalc (void);
 

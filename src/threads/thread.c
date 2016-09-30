@@ -404,8 +404,33 @@ thread_set_priority (int new_priority)
 {
   if(!thread_mlfqs){
     thread_current ()->priority = new_priority;
+    thread_current ()->old_priority = new_priority;
     prioritize();
   }
+}
+
+/* Donate the priority of the currently running thread to to the thread passed
+   in as a parameter. The old_priority value in each thread will never be
+   changed by thread donation, it is changed by thread_set_priority() only 
+   so that we can always tell both when a thread has had its priority donated,
+   and we have a record of the threads undonated priority. */
+void
+thread_donate_priority(struct thread **donatee)
+{
+  int cur_priority = thread_get_priority();
+  int don_priority = (*donatee)->priority;
+  if (cur_priority > don_priority)
+  {
+    (*donatee)->priority = cur_priority;
+  }
+}
+
+void
+thread_clear_donations(void)
+{
+  struct thread *cur = thread_current();
+  if (cur->priority > cur->old_priority)
+    cur->priority = cur->old_priority;
 }
 
 /* Returns the current thread's priority. */
