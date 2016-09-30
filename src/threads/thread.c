@@ -93,10 +93,6 @@ int ready_threads;
 void 
 thread_recalc_priority( struct thread *t, void *unused);
 
-
-
-
-
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -621,6 +617,8 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
+  // added to allow priority donation
+  t->old_priority = priority;
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable ();

@@ -88,6 +88,7 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
+    int old_priority;                   /* Non-donated Priority. */
 
     /* --- NEW --- */
     uint64_t wakeup;			/* tick to wake up on */ 
