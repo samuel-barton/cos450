@@ -429,7 +429,7 @@ void
 thread_clear_donations(void)
 {
   struct thread *cur = thread_current();
-  if (cur->priority > cur->old_priority)
+ // if (cur->priority > cur->old_priority)
     cur->priority = cur->old_priority;
 }
 
