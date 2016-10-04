@@ -622,6 +622,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   // added to allow priority donation
   t->old_priority = priority;
+
+  list_init(&t->donators);
+
   t->magic = THREAD_MAGIC;
 
   t->donate_store = PRI_MAX;
