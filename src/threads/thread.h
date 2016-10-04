@@ -100,8 +100,7 @@ struct thread
     int recent_cpu;
     uint64_t wakeup;			/* tick to wake up on */ 
     int old_priority;                   /* Non-donated Priority. */
-    int donate_store; 
-    bool donated;
+    bool donatee;
 
 
     struct list *donators;

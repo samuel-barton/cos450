@@ -84,7 +84,6 @@ bool wake_comp (const struct list_elem *a,
 
 static tid_t allocate_tid (void);
 void prioritize(void);
-static int old_priority; 
 
 
 int load_avg;
@@ -624,11 +623,10 @@ init_thread (struct thread *t, const char *name, int priority)
   t->old_priority = priority;
 
   list_init(&t->donators);
+  t->donatee = false; 
 
   t->magic = THREAD_MAGIC;
 
-  t->donate_store = PRI_MAX;
-  t->donated = false; 
 
 
   old_level = intr_disable ();
