@@ -185,7 +185,41 @@ void prioritize(void)
   intr_set_level (old_level);
 }
 
+void reassess_priorities(struct thread *cur)
+{
+  if (!cur->donatee)
+    return;
 
+  if (list_empty(&(cur->donators)))
+  {
+    cur->priority = cur->original_priority;
+    cur->donatee = false;
+  }
+  else
+  {
+    list_sort(&(cur->donators), priority_comp, NULL);
+    cur->priority = list_entry(list_front(&(cur->donators)), struct thread, 
+                               elem)->priority;
+  }
+}
+
+void thread_reassess_priorities(void)
+{
+  thread_foreach(reassess_priorities, NULL);
+}
+
+void thread_donate_priority(struct thread *d)
+{
+  struct thread *cur = thread_current();
+
+  if (!d->donatee)
+  {
+    d->donatee = true;
+  }
+
+  list_insert_ordered(&(d->donators), &(cur->elem), priority_comp, NULL);
+  thread_reassess_priorities();
+}
 
 void 
 increment_recent_cpu(void){
