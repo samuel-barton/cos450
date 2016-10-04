@@ -33,7 +33,6 @@ static struct list all_list;
 /* ------ NEW ----- 
     Processes that have been put to sleep.  */
 static struct list sleep_list;
-
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -80,11 +79,11 @@ bool priority_comp(const struct list_elem *a,
 bool wake_comp (const struct list_elem *a, 
                        const struct list_elem *b, void *unused);
 
+void reassess_priorities(struct thread *cur);
 
 
 static tid_t allocate_tid (void);
 void prioritize(void);
-static int old_priority; 
 
 
 int load_avg;
@@ -404,7 +403,7 @@ thread_set_priority (int new_priority)
 {
   if(!thread_mlfqs){
     thread_current ()->priority = new_priority;
-    thread_current ()->old_priority = new_priority;
+    thread_current ()->original_priority = new_priority;
     prioritize();
   }
 }
@@ -621,11 +620,10 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   // added to allow priority donation
-  t->old_priority = priority;
+  t->original_priority = priority;
   t->magic = THREAD_MAGIC;
-
-  t->donate_store = PRI_MAX;
-  t->donated = false; 
+  list_init(&t->donators);
+  t->donatee = false; 
 
 
   old_level = intr_disable ();
@@ -729,9 +727,41 @@ void wake_ready_threads (void)
   wake_ready_threads();
 }
 
+void reassess_priorities(struct thread *cur)
+{
+  if (!cur->donatee)
+    return;
 
+  if (list_empty(&(cur->donators)))
+  {
+    cur->priority = cur->original_priority;
+    cur->donatee = false;
+  }
+  else
+  {
+    list_sort(&(cur->donators), priority_comp, NULL);
+    cur->priority = list_entry(list_front(&(cur->donators)), struct thread, 
+                               elem)->priority;
+  }
+}
 
+void thread_reassess_priorities(void)
+{
+  thread_foreach(thread_reassess_priorities, NULL);
+}
 
+void thread_donate_priority(struct thread *d)
+{
+  struct thread *cur = thread_current();
+
+  if (!d->donatee)
+  {
+    d->donatee = true;
+  }
+
+  list_insert_ordered(&(d->donators), &(cur->elem), priority_comp, NULL);
+  thread_reassess_priorities();
+}
 
 
 /* Completes a thread switch by activating the new thread's page
