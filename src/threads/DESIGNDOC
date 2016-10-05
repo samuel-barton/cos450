@@ -6,10 +6,13 @@
 				   
 ---- GROUP ----
 
->> Fill in the names and email addresses of your group members.
+          _________________________________________
+  ________|                                         |_______
+  \       | Robert Miller <robert.miller@maine.edu> |      /
+   \      | Samuel Barton <samuel-barton@maine.edu> |     /
+   /      |_________________________________________|     \
+  /__________)                                   (_________\
 
-Robert Miller <robert.miller@maine.edu>
-Samuel Barton <samuel-barton@maine.edu>
 
 
 ---- PRELIMINARIES ----
@@ -37,7 +40,7 @@ thread.c
 
 thread.h : 
 
-  /* part of struct thread; sleep list element */ 
+  /* sleep list element */ 
   struct list_elem sleep_elem;              
 
   /* Tick to wake up on. if (timer_tickes == thread->wakeup_tick) the thread is woke up */
@@ -114,20 +117,77 @@ that our data was processed in the order we intended and was reasonably efficien
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+
+
+thread.h :
+
+  /* Boolean value for whether or not this thread has received donations, which 
+     is used to make the priority reassessment process more efficient */
+  bool donatee;
+
+  /* List of threads that currently have their priority donated to this thread */
+  struct list donators;
+
+  /* Donator list element. Used if this thread is a donator for a different thread */
+  struct list_elem donate_elem;
+
+  /* Holds the value of the thread before any donations occurred. A thread is defaulted back
+     to this once their donation list is empty */ 
+  int original_priority; 
+
+
+
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
 >> .png file.)
+
+TODO
 
 ---- ALGORITHMS ----
 
 >> B3: How do you ensure that the highest priority thread waiting for
 >> a lock, semaphore, or condition variable wakes up first?
 
+  We insert threads into the lists by order of priority. If there is an event that changes priority
+of a donator, then we loop through the list of donatees to reassess their priority. When a lock is released,
+the list item in the front of the semphore, which contains the highest priority thread, is unblocked. 
+
 >> B4: Describe the sequence of events when a call to lock_acquire()
 >> causes a priority donation.  How is nested donation handled?
 
+lock_acquire ( lock )
+  -if a thread already holds the lock and has a priority lower than 
+   current thread's priority, call thread_donate_priority( lock->holder )
+  -down the semaphore
+  -set current thread to be the lock holder
+  
+thread_donate_priority( thread donatee )
+  -takes the thread to be donated to as input
+  -if the thread to be donated to isn't already flagged as a donatee, flag it as one
+  -disable interrupts 
+  -insert the current thread into the donators list of the donatee thread
+  -reassess the priority of the donatee thread
+    -if the donators list is empty, set to the original priority value. Otherwise, set to the maximum priority  
+     value of the threads on the donators list
+  -renable interrupts
+
+// Nested donation : TBD
+
+
 >> B5: Describe the sequence of events when lock_release() is called
 >> on a lock that a higher-priority thread is waiting for.
+
+lock_release ( lock )
+  -if there are any threads waiting on the lock, remove all threads from the lock holder's donator list
+   that are also on the lock's semaphore's waiting list
+  -set the holder of the lock to be null
+  -reassess the priorities of all threads
+  -up the semaphore which unblocks the waiting thread of higher priority
+  -with a thread of higher priority now ready, the lower thread yields while the higher priority thread
+   is scheduled to run 
+
+
+
 
 ---- SYNCHRONIZATION ----
 
@@ -135,10 +195,25 @@ that our data was processed in the order we intended and was reasonably efficien
 >> how your implementation avoids it.  Can you use a lock to avoid
 >> this race?
 
+  A potential race would be changing the value of a thread that is depended on by other threads. For instance, 
+changing a the priority of a running thread to be lower than a thread on the ready list should yeild the processor.
+Another example would be changing the priority of a thread that is donating its priority to another thread, in which
+case you would also want to pass that new value along to the donatee thread.
+  Our implementation did not use a lock to solve avoid this race. Instead we turn off interrupts while the 
+check for a higher priority thread to run is being run. After the priority of ANY thread is altered, we call 
+prioritize() which checks if any thread on the ready list has a higher priority than the running thread, and if
+so the running thread yields. 
+
 ---- RATIONALE ----
 
 >> B7: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+
+
+====================== TODO ==================================
+
+
+
 
 			  ADVANCED SCHEDULER
 			  ==================
