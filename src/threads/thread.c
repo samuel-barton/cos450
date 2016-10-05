@@ -80,11 +80,8 @@ bool priority_comp(const struct list_elem *a,
 bool wake_comp (const struct list_elem *a, 
                        const struct list_elem *b, void *unused);
 
-
-
 static tid_t allocate_tid (void);
 void prioritize(void);
-
 
 int load_avg;
 int ready_threads;
@@ -192,7 +189,7 @@ void reassess_priorities(struct thread *cur)
 
   if (list_empty(&(cur->donators)))
   {
-    cur->priority = cur->original_priority;
+    cur->priority = cur->old_priority;
     cur->donatee = false;
   }
   else
@@ -208,17 +205,28 @@ void thread_reassess_priorities(void)
   thread_foreach(reassess_priorities, NULL);
 }
 
-void thread_donate_priority(struct thread *d)
+void thread_donate_priority(struct lock **l)
 {
   struct thread *cur = thread_current();
 
-  if (!d->donatee)
+  if (cur->priority > (*l)->holder->priority)
   {
-    d->donatee = true;
-  }
+    enum intr_level old_level = intr_disable ();
+    list_push_back(&((*l)->donators), &(cur->elem));
 
-  list_insert_ordered(&(d->donators), &(cur->elem), priority_comp, NULL);
-  thread_reassess_priorities();
+    (*l)->holder->priority = cur->priority;
+  
+    intr_set_level (old_level);
+  }
+}
+
+void thread_clear_donations(struct lock **l)
+{
+  enum intr_level old_level = intr_disable ();
+  list_pop_front(&(*l)->donators);
+  intr_set_level (old_level);
+
+  (*l)->holder->priority = (*l)->holder->old_priority;
 }
 
 void 
@@ -825,7 +833,6 @@ void thread_sleep (int64_t wakeup_ticks)
 
   struct thread *cur = running_thread ();
   cur->wakeup = wakeup_ticks;
-  //printf("(sleep) %s Wake up ticks: %d\n",cur->name, cur->wakeup);
   enum intr_level old_level = intr_disable ();
   list_insert_ordered(&sleep_list, &cur->sleep_elem, wake_comp, NULL);
   thread_block();

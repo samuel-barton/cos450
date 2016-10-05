@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -154,8 +155,8 @@ int thread_get_load_avg (void);
 bool priority_comp(const struct list_elem *a, 
                           const struct list_elem *b, void *unused);
 void thread_reassess_priorities(void);
-void thread_donate_priority(struct thread *d);
-
+void thread_donate_priority(struct lock **l);
+void thread_clear_donations(struct lock **l);
 
 
 void increment_recent_cpu (void);
