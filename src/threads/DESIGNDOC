@@ -30,26 +30,80 @@ Samuel Barton <samuel-barton@maine.edu>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+thread.c 
+
+  /* list that holds threads that have been put to sleep */ 
+  static struct list sleep_list;
+
+thread.h : 
+
+  /* part of struct thread; sleep list element */ 
+  struct list_elem sleep_elem;              
+
+  /* Tick to wake up on. if (timer_tickes == thread->wakeup_tick) the thread is woke up */
+  uint64_t wakeup_tick;
+
+
+
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
 
+Here is an explanation of the flow of operations when timer_sleep() is called: 
+
+timer_sleep (int64_t ticks) :
+  -parameter represents how many ticks the thread should be asleep
+  -assert that interrupts are on
+  -check to make sure that ticks are >= 0
+  -calculates wakeup_tick by adding ticks to the current tick (timer_ticks())
+  -calls new thread_sleep method in thread.c that takes wakeup_tick as a parameter
+thread_sleep(int64_t wakeup_ticks) : 
+  -sets 0 as a minimum value for wakeup_ticks (in other words, if <= 0 wake up immediately)
+  -set the wakeup_tick value of the running thread to the parameter
+  -disable interrupts
+  -insert running thread into sleeping list by wakeup_tick in ascending order
+  -block the running thread by calling thread_block() method
+  -enable interrupts 
+thread_block() : 
+  -assert that interrupts are off
+  -set status of running thread to THREAD_BLOCKED
+  -call schedule() method to start running next thread 
+
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
+
+  We minimize the time spent with interrupts disabled, and we only use one time-consuming operation,
+namely the list_insert_ordered on our wait list.
 
 ---- SYNCHRONIZATION ----
 
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
+  The timer_sleep() method quickly calculates the ticks to wake up on and passes that to thread_sleep(),
+which promptly disables interrupts before it inserts the running thread in the sleep list and blocks the thread.
+Interrupts should be disabled during the insertion into lists as well as when you are switching running threads, 
+which is a direct result of blocking the running thread. 
+
+
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
+
+  Race conditions are avoided by use of enabling and disabling interrupts. When manipulating a list, interrupts are
+disabled so a thread finishes the manipulation before any interrupt can occur that may require use of the same list. 
+Additionally, interrupts are disabled when switching running threads to minimize cpu idle time. 
+
 
 ---- RATIONALE ----
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+
+  We chose this design as it is efficient and minimizes the time that interrupts are disabled. Our initial 
+implementation attempted to solve this problem without disabling interrupts at all which lead to race issues. Our
+second implementation was too cavalier with interrupts are was inefficient. We found a middle ground which both ensured
+that our data was processed in the order we intended and was reasonably efficient. 
 
 			 PRIORITY SCHEDULING
 			 ===================
