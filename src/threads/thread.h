@@ -88,11 +88,6 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
-    int old_priority;                   /* Non-donated Priority. */
-
-    /* --- NEW --- */
-    uint64_t wakeup;			/* tick to wake up on */ 
- 
 
     struct list_elem allelem;           /* List element for all threads list. */
 
@@ -103,10 +98,14 @@ struct thread
     struct list_elem sleep_elem;              /*  wait List element. */
     int nice; 
     int recent_cpu;
+    uint64_t wakeup;			/* tick to wake up on */ 
+    int original_priority;                   /* Non-donated Priority. */
+    bool donatee;
 
-    int donate_store; 
-    bool donated;
+    struct list_elem donate_elem;
 
+
+    struct list donators;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -156,8 +155,9 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 bool priority_comp(const struct list_elem *a, 
                           const struct list_elem *b, void *unused);
+void thread_reassess_priorities(void);
 
-
+void thread_donate_priority(struct thread *d);
 
 
 

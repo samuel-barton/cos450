@@ -84,7 +84,6 @@ bool wake_comp (const struct list_elem *a,
 
 static tid_t allocate_tid (void);
 void prioritize(void);
-static int old_priority; 
 
 
 int load_avg;
@@ -92,6 +91,8 @@ int ready_threads;
 
 void 
 thread_recalc_priority( struct thread *t, void *unused);
+
+void reassess_priorities(struct thread *cur, void *unused);
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -186,7 +187,53 @@ void prioritize(void)
   intr_set_level (old_level);
 }
 
+void reassess_priorities(struct thread *cur, void *unused)
+{
+  if (!cur->donatee)
+    return;
 
+  if (list_empty(&cur->donators))
+  {
+    cur->priority = cur->original_priority;
+    cur->donatee = false;
+  }
+  else
+  {
+    
+    list_sort(&cur->donators, priority_comp, NULL);
+    cur->priority = list_entry(list_back(&cur->donators), struct thread, 
+                               donate_elem)->priority;
+  
+
+
+  //  int k = list_entry(list_max(&cur->donators, priority_comp, NULL), struct thread, donate_elem)->priority;
+    //printf("K: %d \n", k);
+  //  int si = list_size(&cur->donators);
+    //printf("size: %d \n", si);
+   
+  }
+}
+
+void thread_reassess_priorities(void)
+{
+  enum intr_level old_level = intr_disable ();
+  thread_foreach(reassess_priorities, NULL);
+  intr_set_level (old_level);
+}
+
+void thread_donate_priority(struct thread *d)
+{
+  struct thread *cur = thread_current();
+
+  if (!d->donatee)
+  {
+    d->donatee = true;
+  }
+  enum intr_level old_level = intr_disable ();
+  list_insert_ordered(&d->donators, &cur->donate_elem, priority_comp, NULL);
+  reassess_priorities(d, NULL);
+  intr_set_level (old_level);
+}
 
 void 
 increment_recent_cpu(void){
@@ -404,7 +451,7 @@ thread_set_priority (int new_priority)
 {
   if(!thread_mlfqs){
     thread_current ()->priority = new_priority;
-    thread_current ()->old_priority = new_priority;
+    thread_current ()->original_priority = new_priority;
     prioritize();
   }
 }
@@ -621,11 +668,13 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   // added to allow priority donation
-  t->old_priority = priority;
+  t->original_priority = priority;
+
+  list_init(&t->donators);
+  t->donatee = false; 
+
   t->magic = THREAD_MAGIC;
 
-  t->donate_store = PRI_MAX;
-  t->donated = false; 
 
 
   old_level = intr_disable ();
