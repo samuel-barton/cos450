@@ -149,6 +149,25 @@ that our data was processed in the order we intended and was reasonably efficien
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+thread.h:
+  
+  /* Determines how 'nice' thread should be to other theads,
+     which is utilized in priority scheduling. */
+  int nice; 
+
+  /* Measures how much CPU time the thread has received recently */ 
+  int recent_cpu;
+
+thread.c: 
+
+  /* System load average. Estimates the average number of threads ready to run
+     over the past minute. Exponentially weighted moving average. */
+  int load_avg;
+ 
+  /* Number of threads that are either running or ready to run, not including the idle thread,
+     at time of update. */
+  int ready_threads
+
 ---- ALGORITHMS ----
 
 >> C2: Suppose threads A, B, and C have nice values 0, 1, and 2.  Each
@@ -156,26 +175,41 @@ that our data was processed in the order we intended and was reasonably efficien
 >> scheduling decision and the priority and recent_cpu values for each
 >> thread after each given number of timer ticks:
 
+"Thread priority is calculated initially at thread initializaiton"
+
+
 timer  recent_cpu    priority   thread
 ticks   A   B   C   A   B   C   to run
 -----  --  --  --  --  --  --   ------
- 0
- 4
- 8
-12
-16
-20
-24
-28
-32
-36
+ 0	0   0   0  63  61  59     A 	    
+ 4      4   1   2  62  61  59     A   
+ 8      7   2   4  62  59  58     A
+12      9   3   6  61  61  58     A     
+16     12   4   8  60  60  57     A   <-  A & B have equal priorities here 
+20     14   5   9  60  60  57     A
+24     16   5  10  59  60  57     B
+28     14   9  11  60  59  57     A
+32     16   9  12  59  59  56     A
+36     18   9  13  59  59  56     A 
 
 >> C3: Did any ambiguities in the scheduler specification make values
 >> in the table uncertain?  If so, what rule did you use to resolve
 >> them?  Does this match the behavior of your scheduler?
 
+  The ambiguity was discovered of what to do when priorities are equal. The table follows the same logic of what 
+we used in the scheduler. 
+  We test if the current thread has a priority that is lower than the next. In turn, we do not switch threads
+when they are equal. If instead we tested for less than or equal the new thread would switch over in a tie. 
+
 >> C4: How is the way you divided the cost of scheduling between code
 >> inside and outside interrupt context likely to affect performance?
+
+  As with the other portions of the project, we aim to disable interrupts for the shortest time possible to
+increase efficiency. The more often that ticks occur the faster the process can execute its intent. Consequently,
+the more lines of code that you have interrupts disabled the more you slow down the overall execution. For instance,
+we check to see if we need to run methods outside of the context, and if it is determined that we do need to call a 
+method that requires interrupts be disabled, we do so within that method. 
+
 
 ---- RATIONALE ----
 
@@ -184,12 +218,28 @@ ticks   A   B   C   A   B   C   to run
 >> time to work on this part of the project, how might you choose to
 >> refine or improve your design?
 
+  Given the nature of the testing routines, on every interrupt we need to check if thread_mlfqs is true. This is only
+one check but it is run so often that the overhead is notable. An alternate strategy would be to have different methods
+for interrupts depending on which scheduler you are using. 
+  Additionally, the value for the number of threads currently ready didn't need to be a static variable as it could 
+have been calculated on the fly when you calculate load average. This was done intentionally for modularity and 
+debugging purposes.
+  If we had more time to improve the design, one aspect would be to streamline more of the fixed point operations. A lot
+of the functionality needed we nest together these statements, where functions that combine the operations would improve 
+efficiency. 
+
+
 >> C6: The assignment explains arithmetic for fixed-point math in
 >> detail, but it leaves it open to you to implement it.  Why did you
 >> decide to implement it the way you did?  If you created an
 >> abstraction layer for fixed-point math, that is, an abstract data
 >> type and/or a set of functions or macros to manipulate fixed-point
 >> numbers, why did you do so?  If not, why not?
+
+  All of the fixed point arithmetic is contained in fixed-point.h within the threads directory. It made sense for us to
+isolate the functionality in its own structure as it may need to be reused in other portions of the project. It is rare 
+to find a math library of functionality defined within the context of a program, as it makes more sense to import math 
+functions rather than redefine them. 
 
 			   SURVEY QUESTIONS
 			   ================
