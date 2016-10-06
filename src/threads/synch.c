@@ -35,7 +35,11 @@
 void clear_donations(struct list *wait_threads);
 
 
-void clear_donations(struct list *wait_threads)
+/*  Removes any thread on the current thread's donator list that exists on the list passed in. 
+    When a lock is released, the waiters of a semaphore are passed in so that the running 
+    thread can remove those threads from its donator list and recalculate its priority */ 
+void 
+clear_donations(struct list *wait_threads)
 {
 
   enum intr_level old_level;
@@ -226,7 +230,11 @@ lock_init (struct lock *lock)
    This function may sleep, so it must not be called within an
    interrupt handler.  This function may be called with
    interrupts disabled, but interrupts will be turned back on if
-   we need to sleep. */
+   we need to sleep. 
+   
+   NEW: If the running thread has a higher priority than the lock
+   holder, donate the priority to the holder 
+   */
 void
 lock_acquire (struct lock *lock)
 {
@@ -240,7 +248,7 @@ lock_acquire (struct lock *lock)
     struct thread *holder = lock->holder;
    
     int current_priority = thread_get_priority();
-    if (lock->holder->priority < current_priority)
+    if (holder->priority < current_priority)
     {
       thread_donate_priority(lock->holder);
     }
@@ -305,7 +313,7 @@ lock_held_by_current_thread (const struct lock *lock)
 
   return lock->holder == thread_current ();
 }
-
+
 /* One semaphore in a list. */
 struct semaphore_elem 
   {

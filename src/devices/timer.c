@@ -95,8 +95,10 @@ timer_elapsed (int64_t then)
 
 
 
-/* Sleeps for approximately TICKS timer ticks.  Interrupts must
-   be turned on. */
+/* NEW: Calculates the tick that a thread should wake up on and
+        sends that value to thread_sleep, which puts the thread 
+        on a wait list which is blocked until the given tick 
+        is reached.*/
 void
 timer_sleep (int64_t ticks) 
 {
@@ -181,8 +183,11 @@ timer_print_stats (void)
 {
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
-/* Timer interrupt handler. */
+
+/* Timer interrupt handler. This method is mostly used as a means to
+   calculate certain intervals of ticks and call corresponding methods.
+   There are three intervals which are tested for : on every tick, on 
+   every four ticks, and on every second. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
@@ -204,18 +209,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Returns true if LOOPS iterations waits for more than one timer
    tick, otherwise false. */

@@ -88,24 +88,25 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
-
+    int original_priority;              /* Non-donated Priority. */ 
+    uint64_t wakeup;			              /* tick to wake up on */
+    int nice;                           /* 'niceness' value */
+    int recent_cpu;                     /* value representing recent time spent on cpu */ 
+    bool donatee;                       /* flag if threads priority has been donated */
+    struct list donators;               /* list of threads that are donating priority to the thread */
+    
+    /* List elements */
     struct list_elem allelem;           /* List element for all threads list. */
-
-    /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* ready List element. */
-
-  /* ---- NEW -------- */
-    struct list_elem sleep_elem;              /*  wait List element. */
-    int nice; 
-    int recent_cpu;
-    uint64_t wakeup;			/* tick to wake up on */ 
-    int original_priority;                   /* Non-donated Priority. */
-    bool donatee;
-
-    struct list_elem donate_elem;
+    struct list_elem sleep_elem;        /*  wait List element. */
+    struct list_elem donate_elem;       /* donators list element */
+     
+   
+   
+    
 
 
-    struct list donators;
+   
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
