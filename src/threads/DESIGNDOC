@@ -1,8 +1,8 @@
-			+--------------------+
+			                  +--------------------+
        	       	        |    COS 450/550     |
-			| PROJECT 1: THREADS |
-			|   DESIGN DOCUMENT  |
-			+--------------------+
+			                  | PROJECT 1: THREADS |
+			                  |   DESIGN DOCUMENT  |
+			                  +--------------------+
 				   
 ---- GROUP ----
 
@@ -141,7 +141,40 @@ thread.h :
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
 >> .png file.)
 
-TODO
+There are two lists and an integer which make up the "data structure" for 
+priority donation. The first list is the list of the threads which have donated
+there priority to each individual thread. The second list is the list of all
+threads with donated priority. The integer keeps track of the threads undonated
+priority so that when all donations have been cleared we can set the thread
+back to its undonated priority.
+
+At time t1
+
+thread_low:2                thread_med:2             
+    |  +--------------+          |  +------+
+    +--| thread_med:2 |          +--| NULL |
+    |  +--------------+             +------+
+    +--old_priority = 1          
+
+at time t2
+
+thread_low:2                thread_med:3             
+    |  +--------------+          |  +---------------+
+    +--| thread_med:3 |          +--| thread_high:3 |
+    |  +--------------+          |  +---------------+
+    +--old_priority = 1          +--old_priority = 2
+
+The call to thread_donate_priority() for thread_med causes the donatee_list's
+threads to be checked over and when this occurs the newly changed priority of
+thread_med will be refleted in thread_low.
+
+at time t3
+
+thread_low:3                thread_med:3             
+    |  +--------------+          |  +---------------+
+    +--| thread_med:3 |          +--| thread_high:3 |
+    |  +--------------+          |  +---------------+
+    +--old_priority = 1          +--old_priority = 2
 
 ---- ALGORITHMS ----
 
@@ -171,7 +204,13 @@ thread_donate_priority( thread donatee )
      value of the threads on the donators list
   -renable interrupts
 
-// Nested donation : TBD
+The, unfortunately unimplemented, design we chose to handle nested donations 
+would work as follows. There would be another list, like the ready list, in 
+thread.c and this list would hold all donatee threads. I.e. all threads which 
+have a donated priority. Each time one of the priority changing methods is 
+called, each thread on that list has its list of donator threads checked to
+ensure that it's priority is still the maximum priority of the threads in the 
+donator list. This way, nesting could be done as deeply as necessary.
 
 
 >> B5: Describe the sequence of events when lock_release() is called
@@ -209,11 +248,19 @@ so the running thread yields.
 >> B7: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
 
+The initial design we considered used a second integer value in the thread 
+struct, which held the non-donated priority. This design quickly fell apart
+for both nested donations, and even for dealing with certain cases of multiple
+donations. Then a lock-based design was considered, which placed a list of 
+donator threads for a particular lock in the lock struct itself, and while this
+system does work for single and multiple donations, it also fails when it comes
+to nesting, as there is no way to tell if a thread is on multiple lock donator
+lists without maintaining a list of locks somewhere.
 
-====================== TODO ==================================
-
-
-
+The design we ended up with, namely a list of donator threads for each thread
+with donated priority, and a static list of the donatee threads, is superior in
+that it handles nesting forever, and is more efficient than simply scanning 
+the entire all_list for threads whose priority needs to be updated. 
 
 			  ADVANCED SCHEDULER
 			  ==================
