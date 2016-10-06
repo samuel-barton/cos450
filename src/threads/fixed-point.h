@@ -1,9 +1,13 @@
+/*
+  Fixed-point operations.
+  Naming conventions :    fp      : fixed point value
+                          int     : integer value 
+                          down    : rounding down            (e.g. 5.9 = 5)
+                          nearest : rounding to nearest value(e.g. 5.9 = 6) 
+*/
+
 
 #define f (1 << 14)
-
-
-
-
 
 // Addition
 int add_fp_fp(int x, int y);
