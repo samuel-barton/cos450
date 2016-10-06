@@ -154,7 +154,7 @@ thread_low:2                thread_med:2
     |  +--------------+          |  +------+
     +--| thread_med:2 |          +--| NULL |
     |  +--------------+             +------+
-    +--old_priority = 1          
+    +-- old_priority = 1          
 
 at time t2
 
@@ -162,7 +162,7 @@ thread_low:2                thread_med:3
     |  +--------------+          |  +---------------+
     +--| thread_med:3 |          +--| thread_high:3 |
     |  +--------------+          |  +---------------+
-    +--old_priority = 1          +--old_priority = 2
+    +-- old_priority = 1         +-- old_priority = 2
 
 The call to thread_donate_priority() for thread_med causes the donatee_list's
 threads to be checked over and when this occurs the newly changed priority of
@@ -174,7 +174,7 @@ thread_low:3                thread_med:3
     |  +--------------+          |  +---------------+
     +--| thread_med:3 |          +--| thread_high:3 |
     |  +--------------+          |  +---------------+
-    +--old_priority = 1          +--old_priority = 2
+    +-- old_priority = 1         +-- old_priority = 2
 
 ---- ALGORITHMS ----
 
