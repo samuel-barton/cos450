@@ -214,14 +214,18 @@ void reassess_priorities(struct thread *cur, void *unused)
   }
 }
 
-void thread_reassess_priorities(void)
+/* recalculates the priority of each thread */
+void 
+thread_reassess_priorities(void)
 {
   enum intr_level old_level = intr_disable ();
   thread_foreach(reassess_priorities, NULL);
   intr_set_level (old_level);
 }
 
-void thread_donate_priority(struct thread *d)
+/* donates the priority of the running thread to the donatee thread */
+void 
+thread_donate_priority(struct thread *d)
 {
   struct thread *cur = thread_current();
 
@@ -235,6 +239,7 @@ void thread_donate_priority(struct thread *d)
   intr_set_level (old_level);
 }
 
+/* increments the running thread's value of recent_cpu by one. Called every tick */
 void 
 increment_recent_cpu(void){
 
@@ -492,11 +497,10 @@ thread_get_load_avg (void)
   return fp_to_int_nearest (multiply_fp_int(load_avg, 100));
 }
 
+/* recalculates system load average */
 void
 update_load_avg (void)
 { 
-
-
   update_ready_threads();
 
   int temp = divide_fp_int( int_to_fp(59), 60);
@@ -505,11 +509,10 @@ update_load_avg (void)
   temp2 = multiply_fp_int( temp2 , ready_threads );
 
   load_avg =  add_fp_fp( temp, temp2 );
-
-
-
 }
 
+/* updates the value of ready_threads, which represents the number of threads in
+   the ready list at time of update */ 
 void
 update_ready_threads (void) 
 {  
@@ -522,6 +525,7 @@ update_ready_threads (void)
 
 }
 
+/* Recalculates the value of recent_cpu for a given thread */
 void
 update_recent_cpu (struct thread *t, void *unused)
 {
@@ -533,6 +537,7 @@ update_recent_cpu (struct thread *t, void *unused)
 
 }
 
+/* Recalculates the priority of each thread */ 
 void
 recalc_priorities (void)
 {
@@ -541,6 +546,8 @@ recalc_priorities (void)
   intr_set_level(old_level);
 }
 
+/* Performs the calculations needed to be done on every second,
+   which include updating the load average and recent_cpu values */ 
 void
 recalc_on_second(void)
 {
@@ -550,8 +557,7 @@ recalc_on_second(void)
   intr_set_level(old_level);
 }
 
-
-
+/* Recalculates the priority of a given thread */ 
 void 
 thread_recalc_priority( struct thread *t, void *unused)
 {
@@ -629,7 +635,7 @@ kernel_thread (thread_func *function, void *aux)
   function (aux);       /* Execute the thread function. */
   thread_exit ();       /* If function() returns, kill the thread. */
 }
-
+
 /* Returns the running thread. */
 struct thread *
 running_thread (void) 
@@ -708,17 +714,14 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else
-
-
     return list_entry (list_pop_front (&ready_list), struct thread, elem);
   
 }
 
 
-/* Returns whether or not item a is greater in priority than item
-   b. */
-
-bool priority_comp(const struct list_elem *a, const struct list_elem *b, 
+/* Returns whether or not item a is greater in priority than item b. */
+bool 
+priority_comp(const struct list_elem *a, const struct list_elem *b, 
                           void *unused)
 {
     struct thread *thread_a = list_entry(a, struct thread, elem);
@@ -728,7 +731,8 @@ bool priority_comp(const struct list_elem *a, const struct list_elem *b,
 }
 
 /* returns whether or not thread a's priority less than thread b's. */
-bool wake_comp (const struct list_elem *a, 
+bool 
+wake_comp (const struct list_elem *a, 
                        const struct list_elem *b, void *unused)
 {
   struct thread *thread_a = list_entry(a, struct thread, sleep_elem);
@@ -741,7 +745,8 @@ bool wake_comp (const struct list_elem *a,
 /* check the first element in the wait list to see if it needs to be put on 
    the ready list. If it does, then put it on the ready list, and check the
    next element in the list, otherwise return immediately. */
-void wake_ready_threads (void)
+void 
+wake_ready_threads (void)
 {
   /* if the list is empty, then we don't want to check anything and we just 
      return. */
@@ -832,7 +837,8 @@ thread_schedule_tail (struct thread *prev)
 /* puts the currently active thread to sleep. The thread is put on the wait
    list, its position the list is determined by its sleep time. The thread is
    removed from being the running thread by the scheduler. */
-void thread_sleep (int64_t wakeup_ticks)
+void 
+thread_sleep (int64_t wakeup_ticks)
 {
   if (wakeup_ticks < 0)
     wakeup_ticks = 0;
@@ -881,7 +887,7 @@ allocate_tid (void)
 
   return tid;
 }
-
+
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
